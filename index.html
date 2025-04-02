@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Server Certificate Setup Guide</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* Use Inter font */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Custom styles for accordion */
+        .accordion-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out; /* Smooth transition for height */
+        }
+        .accordion-content.open {
+            /* max-height is set dynamically by JS */
+            transition: max-height 0.5s ease-in; /* Smooth transition for height */
+        }
+        /* Style checkboxes */
+        input[type="checkbox"] {
+            appearance: none;
+            width: 1.25rem;
+            height: 1.25rem;
+            border: 2px solid #cbd5e1; /* gray-300 */
+            border-radius: 0.25rem; /* rounded */
+            display: inline-block;
+            position: relative;
+            vertical-align: middle;
+            cursor: pointer;
+            margin-right: 0.5rem;
+            flex-shrink: 0; /* Prevent checkbox from shrinking */
+        }
+        input[type="checkbox"]:checked {
+            background-color: #4f46e5; /* indigo-600 */
+            border-color: #4f46e5; /* indigo-600 */
+        }
+        input[type="checkbox"]:checked::after {
+            content: '';
+            display: block;
+            width: 0.3rem;
+            height: 0.6rem;
+            border: solid white;
+            border-width: 0 2px 2px 0;
+            transform: rotate(45deg);
+            position: absolute;
+            top: 0.1rem;
+            left: 0.4rem;
+        }
+        /* Simple alert box style */
+        .alert-box {
+            display: none; /* Hidden by default */
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 1rem 1.5rem;
+            background-color: #fef2f2; /* red-50 */
+            color: #dc2626; /* red-600 */
+            border: 1px solid #fecaca; /* red-300 */
+            border-radius: 0.5rem; /* rounded-lg */
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            z-index: 50;
+        }
+        /* Ensure icons in headers don't shrink */
+        .accordion-header svg {
+            flex-shrink: 0;
+        }
+    </style>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="bg-gray-100 p-4 md:p-8">
+    <div class="max-w-4xl mx-auto bg-white rounded-lg shadow-lg p-6 md:p-8">
+        <h1 class="text-2xl md:text-3xl font-bold text-gray-800 mb-6 flex items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-shield-check mr-3 text-indigo-600"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/><path d="m9 12 2 2 4-4"/></svg>
+            Interactive Server Certificate Setup Guide
+        </h1>
+
+        <div id="alertBox" class="alert-box">
+            <span id="alertMessage"></span>
+        </div>
+
+        <button id="resetButton" class="mb-6 bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded-lg shadow transition duration-150 ease-in-out flex items-center">
+             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-rotate-ccw mr-2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+             Reset Checklist
+        </button>
+
+        <div class="space-y-4" id="accordionContainer">
+
+            <div class="border border-gray-200 rounded-lg overflow-hidden">
+                <button class="accordion-header w-full flex justify-between items-center p-4 bg-gray-50 hover:bg-gray-100 focus:outline-none text-left">
+                    <span class="font-semibold text-lg text-gray-700">Step 1: Prepare Certificates</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-down transition-transform duration-300"><path d="m6 9 6 6 6-6"/></svg>
+                </button>
+                <div class="accordion-content bg-white p-4 border-t border-gray-200">
+                    <p class="text-gray-600 mb-2">Ensure you have the necessary self-signed certificates ready:</p>
+                    <ul class="list-disc list-inside text-gray-600 space-y-1">
+                        <li>Certificate for the GIS Server</li>
+                        <li>Certificate for the Flex Server</li>
+                    </ul>
+                     <label class="mt-3 flex items-center cursor-pointer">
+                        <input type="checkbox" class="form-checkbox">
+                        <span class="text-gray-700">Certificates obtained</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="border border-gray-200 rounded-lg overflow-hidden">
+                <button class="accordion-header w-full flex justify-between items-center p-4 bg-gray-50 hover:bg-gray-100 focus:outline-none text-left">
+                    <span class="font-semibold text-lg text-gray-700">Step 2: Load Certificates (Windows)</span>
+                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-down transition-transform duration-300"><path d="m6 9 6 6 6-6"/></svg>
+                </button>
+                <div class="accordion-content bg-white p-4 border-t border-gray-200">
+                    <p class="text-gray-600 mb-3">Use the Certificate Import Wizard or MMC (run as administrator) to load certificates into the correct stores.</p>
+                    <p class="text-sm text-gray-500 mb-4">(These steps typically don't apply to Linux systems).</p>
+                    <div class="mb-4 p-3 bg-indigo-50 rounded-md border border-indigo-200">
+                        <h4 class="font-semibold text-indigo-800 mb-2">On the Flex Server:</h4>
+                        <label class="flex items-center cursor-pointer mb-1">
+                            <input type="checkbox" class="form-checkbox">
+                            <span class="text-gray-700">Load <strong class="font-medium">Flex Certificate</strong> into <strong class="font-medium">Personal</strong> Store</span>
+                        </label>
+                        <label class="flex items-center cursor-pointer">
+                            <input type="checkbox" class="form-checkbox">
+                            <span class="text-gray-700">Load <strong class="font-medium">Flex Certificate</strong> into <strong class="font-medium">Trusted Root</strong> Certificate Store</span>
+                        </label>
+                         <label class="flex items-center cursor-pointer mt-2">
+                            <input type="checkbox" class="form-checkbox">
+                            <span class="text-gray-700">Load <strong class="font-medium">GIS Certificate</strong> into <strong class="font-medium">Trusted Root</strong> Certificate Store</span>
+                        </label>
+                    </div>
+                     <div class="p-3 bg-teal-50 rounded-md border border-teal-200">
+                        <h4 class="font-semibold text-teal-800 mb-2">On the GIS Server:</h4>
+                        <label class="flex items-center cursor-pointer mb-1">
+                            <input type="checkbox" class="form-checkbox">
+                            <span class="text-gray-700">Load <strong class="font-medium">GIS Certificate</strong> into <strong class="font-medium">Personal</strong> Store</span>
+                        </label>
+                        <label class="flex items-center cursor-pointer">
+                            <input type="checkbox" class="form-checkbox">
+                            <span class="text-gray-700">Load <strong class="font-medium">GIS Certificate</strong> into <strong class="font-medium">Trusted Root</strong> Certificate Store</span>
+                        </label>
+                    </div>
+                    <p class="text-sm text-gray-500 mt-4">Refer to Step 9 for detailed instructions on using the Import Wizard/MMC.</p>
+                </div>
+            </div>
+
+            <div class="border border-gray-200 rounded-lg overflow-hidden">
+                <button class="accordion-header w-full flex justify-between items-center p-4 bg-gray-50 hover:bg-gray-100 focus:outline-none text-left">
+                    <span class="font-semibold text-lg text-gray-700">Step 3: DNS Configuration</span>
+                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-down transition-transform duration-300"><path d="m6 9 6 6 6-6"/></svg>
+                </button>
+                <div class="accordion-content bg-white p-4 border-t border-gray-200 space-y-3">
+                     <p class="text-gray-600">Ensure DNS is correctly configured for the Fully Qualified Domain Name (FQDN) of both servers.</p>
+                     <label class="flex items-center cursor-pointer">
+                        <input type="checkbox" class="form-checkbox">
+                        <span class="text-gray-700">DNS configured for GIS Server FQDN</span>
+                    </label>
+                     <label class="flex items-center cursor-pointer">
+                        <input type="checkbox" class="form-checkbox">
+                        <span class="text-gray-700">DNS configured for Flex Server FQDN</span>
+                    </label>
+                     <label class="flex items-center cursor-pointer">
+                        <input type="checkbox" class="form-checkbox">
+                        <span class="text-gray-700">Can <code class="bg-gray-200 px-1 rounded text-sm">ping</code> and <code class="bg-gray-200 px-1 rounded text-sm">nslookup</code> FQDNs successfully from both servers</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="border border-gray-200 rounded-lg overflow-hidden">
+                <button class="accordion-header w-full flex justify-between items-center p-4 bg-gray-50 hover:bg-gray-100 focus:outline-none text-left">
+                    <span class="font-semibold text-lg text-gray-700">Step 4: Verify Certificate Accessibility</span>
+                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-down transition-transform duration-300"><path d="m6 9 6 6 6-6"/></svg>
+                </button>
+                <div class="accordion-content bg-white p-4 border-t border-gray-200 space-y-3">
+                     <p class="text-gray-600">Confirm that all client machines can reach both the GIS and Flex servers using their configured FQDNs.</p>
+                     <p class="text-gray-600">The FQDN used must match the name specified in the respective server's certificate.</p>
+                     <label class="flex items-center cursor-pointer">
+                        <input type="checkbox" class="form-checkbox">
+                        <span class="text-gray-700">Clients can reach servers via FQDN matching certificate names</span>
+                    </label>
+                </div>
+            </div>
+
+             <div class="border border-gray-200 rounded-lg overflow-hidden">
+                <button class="accordion-header w-full flex justify-between items-center p-4 bg-gray-50 hover:bg-gray-100 focus:outline-none text-left">
+                    <span class="font-semibold text-lg text-gray-700">Step 5: Restart Services</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-down transition-transform duration-300"><path d="m6 9 6 6 6-6"/></svg>
+                </button>
+                <div class="accordion-content bg-white p-4 border-t border-gray-200 space-y-3">
+                    <p class="text-gray-600">Restart the necessary services for the certificate changes to take effect.</p>
+                     <label class="flex items-center cursor-pointer">
+                        <input type="checkbox" class="form-checkbox">
+                        <span class="text-gray-700">Restart Geobase Standalone service</span>
+                    </label>
+                     <label class="flex items-center cursor-pointer">
+                        <input type="checkbox" class="form-checkbox">
+                        <span class="text-gray-700">Restart Spillman Standalone service (if applicable)</span>
+                    </label>
+                     <label class="flex items-center cursor-pointer">
+                        <input type="checkbox" class="form-checkbox">
+                        <span class="text-gray-700">Restart Apache Tomcat service (if applicable)</span>
+                    </label>
+                     <p class="text-sm text-gray-500 mt-2">Consider a full server reboot (if possible, especially in non-live environments) to ensure a clean start.</p>
+                </div>
+            </div>
+
+            <div class="border border-gray-200 rounded-lg overflow-hidden">
+                <button class="accordion-header w-full flex justify-between items-center p-4 bg-gray-50 hover:bg-gray-100 focus:outline-none text-left">
+                    <span class="font-semibold text-lg text-gray-700">Step 6: Testing Connection</span>
+                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-down transition-transform duration-300"><path d="m6 9 6 6 6-6"/></svg>
+                </button>
+                <div class="accordion-content bg-white p-4 border-t border-gray-200 space-y-3">
+                     <p class="text-gray-600">Attempt to access the GIS server's admin endpoint using its HTTPS FQDN in a web browser.</p>
+                     <p class="text-gray-600">Example: <code class="bg-gray-200 px-1 rounded text-sm">https://YOUR_GIS_FQDN:6443/arcgis/admin</code></p>
+                     <label class="flex items-center cursor-pointer">
+                        <input type="checkbox" class="form-checkbox">
+                        <span class="text-gray-700">Successfully accessed GIS admin endpoint via HTTPS FQDN</span>
+                    </label>
+                     <p class="text-sm text-gray-500 mt-2">If unsuccessful, review previous steps, especially certificate loading (Step 2) and DNS (Step 3).</p>
+                </div>
+            </div>
+
+            <div class="border border-gray-200 rounded-lg overflow-hidden">
+                <button class="accordion-header w-full flex justify-between items-center p-4 bg-gray-50 hover:bg-gray-100 focus:outline-none text-left">
+                    <span class="font-semibold text-lg text-gray-700">Step 7: Change/Update ArcGIS Certificate (Advanced)</span>
+                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-down transition-transform duration-300"><path d="m6 9 6 6 6-6"/></svg>
+                </button>
+                <div class="accordion-content bg-white p-4 border-t border-gray-200 space-y-3">
+                    <p class="text-gray-600 mb-3">This section details how to update the certificate specifically used by ArcGIS Server, often needed when using CA-signed certificates or replacing existing ones.</p>
+
+                    <div class="space-y-2 mb-4">
+                        <h5 class="font-medium text-gray-800">Process Overview:</h5>
+                        <label class="flex items-center cursor-pointer">
+                            <input type="checkbox" class="form-checkbox">
+                            <span class="text-gray-700">Prepare certificate in password-protected PFX format (see details below).</span>
+                        </label>
+                         <label class="flex items-center cursor-pointer">
+                            <input type="checkbox" class="form-checkbox">
+                            <span class="text-gray-700">Access ArcGIS Server Admin Console (<code class="bg-gray-200 px-1 rounded text-sm">https://[GIS_FQDN]:6443/arcgis/admin</code>).</span>
+                        </label>
+                         <label class="flex items-center cursor-pointer">
+                            <input type="checkbox" class="form-checkbox">
+                            <span class="text-gray-700">Navigate to <code class="bg-gray-200 px-1 rounded text-sm">machines > [machine name] > sslcertificates</code>.</span>
+                        </label>
+                         <label class="flex items-center cursor-pointer">
+                            <input type="checkbox" class="form-checkbox">
+                            <span class="text-gray-700">Use <code class="bg-gray-200 px-1 rounded text-sm">importExistingServerCertificate</code> (or generate/import root/intermediate).</span>
+                        </label>
+                        <label class="flex items-center cursor-pointer">
+                            <input type="checkbox" class="form-checkbox">
+                            <span class="text-gray-700">Return to machine page (<code class="bg-gray-200 px-1 rounded text-sm">machines > [machine name]</code>), click <code class="bg-gray-200 px-1 rounded text-sm">edit</code>.</span>
+                        </label>
+                         <label class="flex items-center cursor-pointer">
+                            <input type="checkbox" class="form-checkbox">
+                            <span class="text-gray-700">Select the alias of the newly imported certificate in the <code class="bg-gray-200 px-1 rounded text-sm">Web server SSL Certificate</code> field.</span>
+                        </label>
+                        <label class="flex items-center cursor-pointer">
+                            <input type="checkbox" class="form-checkbox">
+                            <span class="text-gray-700">Click <code class="bg-gray-200 px-1 rounded text-sm">Save Edits</code> and wait for services to restart (2-10 mins).</span>
+                        </label>
+                         <label class="flex items-center cursor-pointer">
+                            <input type="checkbox" class="form-checkbox">
+                            <span class="text-gray-700">If needed, load the new certificate into Windows stores (Personal/Trusted Root) as per Step 2.</span>
+                        </label>
+                    </div>
+
+                     <div class="border border-gray-200 rounded-lg overflow-hidden mt-4">
+                         <button class="accordion-header w-full flex justify-between items-center p-3 bg-gray-100 hover:bg-gray-200 focus:outline-none text-left">
+                            <span class="font-medium text-gray-700">Creating PFX Format (using OpenSSL)</span>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-down transition-transform duration-300"><path d="m6 9 6 6 6-6"/></svg>
+                        </button>
+                        <div class="accordion-content bg-white p-3 border-t border-gray-200">
+                            <p class="text-gray-600 mb-2">This is typically the customer's responsibility. Requires OpenSSL (install if needed).</p>
+                            <ol class="list-decimal list-inside text-gray-600 space-y-1 text-sm">
+                                <li>Have certificate (<code class="bg-gray-200 px-1 rounded text-xs">.crt</code>), key (<code class="bg-gray-200 px-1 rounded text-xs">.key</code>), and any intermediate/root certificates (<code class="bg-gray-200 px-1 rounded text-xs">.cer</code>/<code class="bg-gray-200 px-1 rounded text-xs">.crt</code>) as separate files.</li>
+                                <li>Run in admin command prompt: <br> <code class="block bg-gray-800 text-white p-2 rounded text-xs my-1 overflow-x-auto">openssl pkcs12 -export -out output.pfx -inkey private.key -in certificate.crt -certfile intermediate_root_chain.crt</code> <br>(Replace filenames; <code class="bg-gray-200 px-1 rounded text-xs">-certfile</code> includes intermediate/root certs concatenated together if applicable).</li>
+                                <li>Import the generated <code class="bg-gray-200 px-1 rounded text-xs">.pfx</code> into Windows Personal store (double-click, mark key exportable).</li>
+                                <li>Use MMC (Certificates Snap-in for Local Computer) to export the certificate again from Personal store.</li>
+                                <li>During export: Select "Yes, export the private key".</li>
+                                <li>During export: Uncheck "Include all certificates in the certificate path".</li>
+                                <li>During export: Set a password (No special chars for ArcGIS <=10.8.1; OK for >=10.9.1).</li>
+                                <li>Save the new PFX file. This is the file to import into ArcGIS Server Admin Console.</li>
+                                <li>Import root/intermediate certs into Trusted Root/Intermediate stores if needed (Step 9).</li>
+                            </ol>
+                         </div>
+                     </div>
+                </div>
+            </div>
+
+            <div class="border border-gray-200 rounded-lg overflow-hidden">
+                <button class="accordion-header w-full flex justify-between items-center p-4 bg-gray-50 hover:bg-gray-100 focus:outline-none text-left">
+                    <span class="font-semibold text-lg text-gray-700">Step 8: Configure Flex Mapping/Geovalidation</span>
+                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-down transition-transform duration-300"><path d="m6 9 6 6 6-6"/></svg>
+                </button>
+                <div class="accordion-content bg-white p-4 border-t border-gray-200 space-y-3">
+                    <p class="text-gray-600 mb-3">Configure Flex to use the secure GIS connection.</p>
+                     <label class="flex items-center cursor-pointer">
+                        <input type="checkbox" class="form-checkbox">
+                        <span class="text-gray-700">Log in to Flex and open <strong class="font-medium">Adminutil</strong>.</span>
+                    </label>
+                     <label class="flex items-center cursor-pointer">
+                        <input type="checkbox" class="form-checkbox">
+                        <span class="text-gray-700">Define Geobase. If old options show, set <code class="bg-gray-200 px-1 rounded text-sm">Module.GeoValidation.GeoValidationConnectionType</code> to <code class="bg-gray-200 px-1 rounded text-sm">REST</code>, log out/in.</span>
+                    </label>
+                    <label class="flex items-center cursor-pointer">
+                        <input type="checkbox" class="form-checkbox">
+                        <span class="text-gray-700">Click <strong class="font-medium">Geobase</strong> > <strong class="font-medium">Configuration Setup</strong>.</span>
+                    </label>
+                     <label class="flex items-center cursor-pointer">
+                        <input type="checkbox" class="form-checkbox">
+                        <span class="text-gray-700">Enter GIS FQDN (e.g., <code class="bg-gray-200 px-1 rounded text-sm">https://FLEXGIS-911.CCOPS.LOCAL:6443</code>) - <strong class="font-medium text-red-600">CASE MUST MATCH GIS Certificate!</strong></span>
+                    </label>
+                     <label class="flex items-center cursor-pointer">
+                        <input type="checkbox" class="form-checkbox">
+                        <span class="text-gray-700">Verify green checkmark appears (indicates successful connection). If not, check GIS cert loading (Step 2) and DNS (Step 3).</span>
+                    </label>
+                    <label class="flex items-center cursor-pointer">
+                        <input type="checkbox" class="form-checkbox">
+                        <span class="text-gray-700">Restart Geobase Standalone (and potentially Spillman/Tomcat - see Step 5).</span>
+                    </label>
+                    <p class="text-sm text-gray-500 mt-2">Remember: Client computers needing CAD Map access also require certificates installed (Step 9).</p>
+                </div>
+            </div>
+
+            <div class="border border-gray-200 rounded-lg overflow-hidden">
+                <button class="accordion-header w-full flex justify-between items-center p-4 bg-gray-50 hover:bg-gray-100 focus:outline-none text-left">
+                    <span class="font-semibold text-lg text-gray-700">Step 9: Install Client Certificates (Self-Signed)</span>
+                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-down transition-transform duration-300"><path d="m6 9 6 6 6-6"/></svg>
+                </button>
+                <div class="accordion-content bg-white p-4 border-t border-gray-200 space-y-3">
+                    <p class="text-gray-600 mb-3">Install self-signed certificates on client machines and potentially servers (if acting as clients) that need to trust the GIS/Flex servers.</p>
+                    <p class="text-gray-600 mb-3">If both GIS and Flex use self-signed certs, <strong class="font-medium">both</strong> certificates must be installed on clients.</p>
+                     <label class="flex items-center cursor-pointer mb-4">
+                        <input type="checkbox" class="form-checkbox">
+                        <span class="text-gray-700">Certificates installed on all required client machines.</span>
+                    </label>
+
+                    <div class="border border-gray-200 rounded-lg overflow-hidden">
+                         <button class="accordion-header w-full flex justify-between items-center p-3 bg-gray-100 hover:bg-gray-200 focus:outline-none text-left">
+                            <span class="font-medium text-gray-700">Installation Method 1: Import Wizard</span>
+                             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-down transition-transform duration-300"><path d="m6 9 6 6 6-6"/></svg>
+                        </button>
+                        <div class="accordion-content bg-white p-3 border-t border-gray-200">
+                             <ol class="list-decimal list-inside text-gray-600 space-y-1 text-sm">
+                                <li>Log onto the Windows machine (client or server) as an admin.</li>
+                                <li>Copy the certificate file (<code class="bg-gray-200 px-1 rounded text-xs">.cer</code> or <code class="bg-gray-200 px-1 rounded text-xs">.crt</code>) to the machine.</li>
+                                <li>Double-click the certificate file.</li>
+                                <li>Click "Install Certificate...".</li>
+                                <li>Select Store Location: "Local Machine". Click Next. (Allow admin prompt if it appears).</li>
+                                <li>Select "Place all certificates in the following store". Click Browse.</li>
+                                <li>Select "Trusted Root Certification Authorities". Click OK.</li>
+                                <li>Click Next, then Finish, then OK, then OK again.</li>
+                            </ol>
+                        </div>
+                    </div>
+
+                    <div class="border border-gray-200 rounded-lg overflow-hidden mt-3">
+                         <button class="accordion-header w-full flex justify-between items-center p-3 bg-gray-100 hover:bg-gray-200 focus:outline-none text-left">
+                            <span class="font-medium text-gray-700">Installation Method 2: MMC Snap-in</span>
+                             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-down transition-transform duration-300"><path d="m6 9 6 6 6-6"/></svg>
+                        </button>
+                        <div class="accordion-content bg-white p-3 border-t border-gray-200">
+                             <ol class="list-decimal list-inside text-gray-600 space-y-1 text-sm">
+                                <li>Log onto the Windows machine as an admin.</li>
+                                <li>Open Start, type <code class="bg-gray-200 px-1 rounded text-xs">mmc</code>, right-click mmc.exe, select "Run as administrator".</li>
+                                <li>File > Add/Remove Snap-in...</li>
+                                <li>Select "Certificates", click Add >.</li>
+                                <li>Choose "Computer account", click Next.</li>
+                                <li>Select "Local computer", click Finish, then OK.</li>
+                                <li>Expand "Certificates (Local Computer)".</li>
+                                <li>Right-click "Trusted Root Certification Authorities".</li>
+                                <li>Select All Tasks > Import...</li>
+                                <li>Click Next on the wizard welcome screen.</li>
+                                <li>Browse to and select your certificate file (<code class="bg-gray-200 px-1 rounded text-xs">.cer</code>/<code class="bg-gray-200 px-1 rounded text-xs">.crt</code>). Click Next.</li>
+                                <li>Ensure "Place all certificates in the following store" is selected and the store shown is "Trusted Root Certification Authorities". Click Next.</li>
+                                <li>Click Finish, then OK.</li>
+                            </ol>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="border border-gray-200 rounded-lg overflow-hidden">
+                <button class="accordion-header w-full flex justify-between items-center p-4 bg-gray-50 hover:bg-gray-100 focus:outline-none text-left">
+                    <span class="font-semibold text-lg text-gray-700">Step 10: Troubleshooting Checklist</span>
+                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-down transition-transform duration-300"><path d="m6 9 6 6 6-6"/></svg>
+                </button>
+                <div class="accordion-content bg-white p-4 border-t border-gray-200 space-y-3">
+                    <p class="text-gray-600 mb-3">If you encounter issues, review these common points:</p>
+                    <ul class="list-disc list-inside text-gray-600 space-y-2">
+                        <li><strong>Flex Client Login:</strong> Is the Flex client logged in using the FQDN that matches the Flex certificate?</li>
+                        <li><strong>GIS Certificate Loaded:</strong> Is the GIS certificate correctly loaded in the Windows Certificate Manager (Personal & Trusted Root on GIS server, Trusted Root on Flex server)? (Step 2)</li>
+                        <li><strong>Client Certificates:</strong> Do client PCs needing map access have BOTH self-signed GIS and Flex certificates loaded in their Trusted Root store? (Step 9)</li>
+                        <li><strong>Case Sensitivity:</strong> Does the GIS FQDN entered in Adminutil (Step 8) EXACTLY match the case used in the GIS certificate?</li>
+                        <li><strong>DNS Verification:</strong> Can both servers ping and nslookup the FQDN of the other server? (Step 3)</li>
+                        <li><strong>Full Restart:</strong> Have you tried a full service restart (Geobase, Spillman, Tomcat) or even a server reboot after verifying other steps? (Step 5)</li>
+                        <li><strong>Certificate Creation Tools:</strong> Avoid using agency-specific tools to create self-signed certificates; they might cause issues. Use standard methods like OpenSSL or Windows tools.</li>
+                        <li><strong>OCSP/CRL Access:</strong> Are the Online Certificate Status Protocol (OCSP) and/or Certificate Revocation List (CRL) URLs embedded in the certificates accessible from servers and clients? (Firewall issue?)</li>
+                        <li><strong>FQDN Format:</strong> Ensure FQDNs are fully qualified (e.g., <code class="bg-gray-200 px-1 rounded text-sm">server.domain.local</code>, <code class="bg-gray-200 px-1 rounded text-sm">server.domain.com</code>). Simple hostnames (e.g., <code class="bg-gray-200 px-1 rounded text-sm">flex-gis</code>) may not work with newer validation standards (versions >= 2024.2).</li>
+                        <li><strong>Network Reachability:</strong> Can all clients reach both servers via the FQDNs specified in the certificates? (Network routing/firewall issue?)</li>
+                    </ul>
+                </div>
+            </div>
+
+        </div> </div> <script>
+        // Function to show alert message
+        function showAlert(message) {
+            const alertBox = document.getElementById('alertBox');
+            const alertMessage = document.getElementById('alertMessage');
+            alertMessage.textContent = message;
+            alertBox.style.display = 'block';
+            // Hide after 3 seconds
+            setTimeout(() => {
+                alertBox.style.display = 'none';
+            }, 3000);
+        }
+
+        // Accordion functionality
+        const accordionContainer = document.getElementById('accordionContainer');
+        accordionContainer.addEventListener('click', function(event) {
+            // Find the closest accordion header that was clicked or is an ancestor of the clicked element
+            const header = event.target.closest('.accordion-header');
+            if (!header) return; // Exit if click wasn't on or inside a header
+
+            const content = header.nextElementSibling; // Get the very next sibling element
+            const icon = header.querySelector('svg');
+
+            // Ensure the next sibling is the intended content div
+            if (!content || !content.classList.contains('accordion-content')) {
+                console.error("Accordion content not found immediately after header:", header);
+                return; // Stop if structure is not header followed by content
+            }
+
+            // Toggle the 'open' class on the content div
+            content.classList.toggle('open');
+
+            // Update styles based on the 'open' state
+            if (content.classList.contains('open')) {
+                // Set max-height to reveal the content with animation
+                // scrollHeight gives the actual height of the content
+                content.style.maxHeight = content.scrollHeight + "px";
+                // Rotate the chevron icon down
+                if (icon) icon.style.transform = 'rotate(180deg)';
+            } else {
+                // Set max-height to 0 to hide the content with animation
+                content.style.maxHeight = '0';
+                // Rotate the chevron icon back up
+                if (icon) icon.style.transform = 'rotate(0deg)';
+            }
+
+            // --- Adjustment for Nested Accordions ---
+            // Find the closest parent accordion content, if this accordion is nested
+            const parentAccordionContent = header.closest('.accordion-content.open');
+            if (parentAccordionContent) {
+                // If a parent accordion is open, recalculate its max-height after a short delay
+                // This allows the inner accordion animation to start and the parent to resize smoothly
+                setTimeout(() => {
+                     // Check if parent is still open before adjusting
+                     if (parentAccordionContent.classList.contains('open')) {
+                        parentAccordionContent.style.maxHeight = parentAccordionContent.scrollHeight + "px";
+                     }
+                }, 300); // Match transition duration or slightly longer
+            }
+        });
+
+        // --- Add adjustment for window resize ---
+        window.addEventListener('resize', () => {
+             // Recalculate max-height for all currently open accordion contents
+             const openContents = accordionContainer.querySelectorAll('.accordion-content.open');
+             openContents.forEach(content => {
+                 // Set the max-height based on the current scrollHeight
+                 // This ensures content isn't cut off after resize
+                 content.style.maxHeight = content.scrollHeight + "px";
+             });
+        });
+
+        // Initialize Lucide icons
+        // This function finds elements with the `data-lucide` attribute and replaces them
+        lucide.createIcons();
+
+        // Reset Button Functionality
+        const resetButton = document.getElementById('resetButton');
+        resetButton.addEventListener('click', () => {
+            const checkboxes = accordionContainer.querySelectorAll('input[type="checkbox"]');
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = false;
+                // Also clear localStorage for the reset item
+                const storageKey = `cert_checklist_item_${checkbox.dataset.index}`; // Use data-index if set
+                localStorage.removeItem(storageKey);
+            });
+
+            // Close all accordion sections
+            const allContents = accordionContainer.querySelectorAll('.accordion-content');
+            const allIcons = accordionContainer.querySelectorAll('.accordion-header svg');
+            allContents.forEach(content => {
+                 if (content.classList.contains('open')) {
+                    content.classList.remove('open');
+                    content.style.maxHeight = '0';
+                 }
+            });
+             allIcons.forEach(icon => {
+                 if (icon) icon.style.transform = 'rotate(0deg)';
+             });
+
+            showAlert('Checklist has been reset.');
+        });
+
+        // Persist checkbox state using localStorage
+        const allCheckboxes = accordionContainer.querySelectorAll('input[type="checkbox"]');
+        allCheckboxes.forEach((checkbox, index) => {
+            // Use a unique ID or a data attribute for a more robust key
+            const storageKey = `cert_checklist_item_${index}`;
+            checkbox.dataset.index = index; // Store index for reset button
+
+            // Load saved state
+            if (localStorage.getItem(storageKey) === 'true') {
+                checkbox.checked = true;
+            }
+
+            // Save state on change
+            checkbox.addEventListener('change', () => {
+                localStorage.setItem(storageKey, checkbox.checked);
+            });
+        });
+
+    </script>
+</body>
+</html>
+```
